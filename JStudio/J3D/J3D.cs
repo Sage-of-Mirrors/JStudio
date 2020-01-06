@@ -14,6 +14,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using WArchiveTools;
 using WindEditor;
+using JStudio.Framework;
 
 namespace JStudio.J3D
 {
@@ -997,6 +998,18 @@ namespace JStudio.J3D
             }
 
             return rayDidHit;
+        }
+
+        public List<DrawCall> GatherDrawCalls()
+        {
+            List<DrawCall> calls = new List<DrawCall>();
+
+            foreach (SHP1.Shape shape in SHP1Tag.Shapes)
+            {
+                calls.AddRange(shape.GenerateDrawCalls());
+            }
+
+            return calls;
         }
 
         protected void OnPropertyChanged(string propertyName)

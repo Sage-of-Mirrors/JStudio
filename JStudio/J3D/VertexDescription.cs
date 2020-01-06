@@ -5,18 +5,30 @@ using System.Collections.Generic;
 
 namespace JStudio.J3D
 {
-    public class VertexDescription
+    public class VertexDescription : IDisposable
     {
-        private List<ShaderAttributeIds> m_enabledAttributes;
+        private int[] m_BufferIds;
+
+        public List<ShaderAttributeIds> EnabledAttributes { get; set; }
+        public int IndexBufferId { get; }
+        public int IndexCount { get; }
 
         public VertexDescription()
         {
-            m_enabledAttributes = new List<ShaderAttributeIds>();
+            EnabledAttributes = new List<ShaderAttributeIds>();
+
+            m_BufferIds = new int[16];
+            for (int i = 0; i < m_BufferIds.Length; i++)
+            {
+                m_BufferIds[i] = -1;
+            }
+
+            IndexBufferId = GL.GenBuffer();
         }
 
         public bool AttributeIsEnabled(ShaderAttributeIds attribute)
         {
-            return m_enabledAttributes.Contains(attribute);
+            return EnabledAttributes.Contains(attribute);
         }
 
         public int GetAttributeSize(ShaderAttributeIds attribute)
@@ -101,9 +113,57 @@ namespace JStudio.J3D
             }
         }
 
+        public int GetAttributeBufferId(ShaderAttributeIds attribute)
+        {
+            if (!AttributeIsEnabled(attribute))
+            {
+                return -1;
+            }
+
+            return m_BufferIds[(int)attribute];
+        }
+
         public void EnableAttribute(ShaderAttributeIds attribute)
         {
-            m_enabledAttributes.Add(attribute);
+            m_BufferIds[(int)attribute] = GL.GenBuffer();
+            EnabledAttributes.Add(attribute);
         }
+
+        #region IDisposable Support
+        private bool m_hasBeenDisposed;
+
+        ~VertexDescription()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(false);
+        }
+
+        protected virtual void Dispose(bool manualDispose)
+        {
+            if (!m_hasBeenDisposed)
+            {
+                if (manualDispose)
+                {
+                    // TODO: dispose managed state (managed objects).
+                }
+
+                GL.DeleteBuffer(IndexBufferId);
+
+                for (int i = 0; i < m_BufferIds.Length; i++)
+                    if (m_BufferIds[i] >= 0)
+                        GL.DeleteBuffer(m_BufferIds[i]);
+
+                m_hasBeenDisposed = true;
+            }
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }
