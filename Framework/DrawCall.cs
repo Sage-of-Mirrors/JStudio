@@ -20,15 +20,16 @@ namespace JStudio.Framework
         public IntPtr UBOSliceOffset { get; set; }
         public IntPtr BonePaletteSliceOffset { get; set; }
 
-        public DrawCall(VertexDescription vtx_info)
+        public DrawCall(VertexDescription vtx_info, Material material)
         {
             VertexData = vtx_info;
+            Material = material;
         }
 
         public void Draw()
         {
             BindBuffers();
-            Material.Bind();
+            //Material.Bind();
 
             GL.DrawElements(BeginMode.Triangles, VertexData.IndexCount, DrawElementsType.UnsignedInt, 0);
 
@@ -49,8 +50,8 @@ namespace JStudio.Framework
 
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, VertexData.IndexBufferId);
 
-            GL.BindBufferRange(BufferRangeTarget.UniformBuffer, 0, UBOId, UBOSliceOffset, Marshal.SizeOf(typeof(UniformBufferBlock)));
-            GL.BindBufferRange(BufferRangeTarget.UniformBuffer, 1, UBOId, BonePaletteSliceOffset, Marshal.SizeOf(typeof(BonePaletteBlock)));
+            GL.BindBufferRange(BufferRangeTarget.UniformBuffer, 0, UBOId, UBOSliceOffset, Marshal.SizeOf(typeof(MaterialBlock)));
+            GL.BindBufferRange(BufferRangeTarget.UniformBuffer, 1, UBOId, BonePaletteSliceOffset, Marshal.SizeOf(typeof(MatrixBlock)));
         }
 
         private void UnbindBuffers()

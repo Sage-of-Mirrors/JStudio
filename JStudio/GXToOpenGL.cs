@@ -103,7 +103,7 @@ namespace JStudio.OpenGL
             if (blendMode.Type == GXBlendMode.Blend)
             {
                 GL.Enable(EnableCap.Blend);
-                GL.BlendFunc(GetBlendFactorSrc(blendMode.SourceFactor), GetBlendFactorDest(blendMode.DestinationFactor));
+                //GL.BlendFunc(GetBlendFactorSrc(blendMode.SourceFactor), GetBlendFactorDest(blendMode.DestinationFactor));
             }
             else if (blendMode.Type == GXBlendMode.None)
             {

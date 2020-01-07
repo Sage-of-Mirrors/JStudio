@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.29609.76
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JStudio", "JStudio.csproj", "{B90410AE-BB67-4D7A-B4F5-7209CB357A44}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JStudioDebugger", "..\JStudioDebugger\JStudioDebugger.csproj", "{8716235C-5423-48B5-ACEE-ABA184D5D713}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WCommon", "..\SageOfMirrors_WCommon\WCommon.csproj", "{E8AF46CC-76DC-4541-A578-5067EAD07087}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,22 @@ Global
 		{B90410AE-BB67-4D7A-B4F5-7209CB357A44}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B90410AE-BB67-4D7A-B4F5-7209CB357A44}.Release|x64.ActiveCfg = Release|x64
 		{B90410AE-BB67-4D7A-B4F5-7209CB357A44}.Release|x64.Build.0 = Release|x64
+		{8716235C-5423-48B5-ACEE-ABA184D5D713}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8716235C-5423-48B5-ACEE-ABA184D5D713}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8716235C-5423-48B5-ACEE-ABA184D5D713}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8716235C-5423-48B5-ACEE-ABA184D5D713}.Debug|x64.Build.0 = Debug|Any CPU
+		{8716235C-5423-48B5-ACEE-ABA184D5D713}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8716235C-5423-48B5-ACEE-ABA184D5D713}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8716235C-5423-48B5-ACEE-ABA184D5D713}.Release|x64.ActiveCfg = Release|Any CPU
+		{8716235C-5423-48B5-ACEE-ABA184D5D713}.Release|x64.Build.0 = Release|Any CPU
+		{E8AF46CC-76DC-4541-A578-5067EAD07087}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8AF46CC-76DC-4541-A578-5067EAD07087}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8AF46CC-76DC-4541-A578-5067EAD07087}.Debug|x64.ActiveCfg = Debug|x64
+		{E8AF46CC-76DC-4541-A578-5067EAD07087}.Debug|x64.Build.0 = Debug|x64
+		{E8AF46CC-76DC-4541-A578-5067EAD07087}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8AF46CC-76DC-4541-A578-5067EAD07087}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8AF46CC-76DC-4541-A578-5067EAD07087}.Release|x64.ActiveCfg = Release|x64
+		{E8AF46CC-76DC-4541-A578-5067EAD07087}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

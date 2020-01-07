@@ -72,7 +72,7 @@ namespace JStudio.J3D.Animation
 
 				// Override the TexMatrix specified by the Material's Index which is specified by the animation hah.
 				var texMatrixIndex = m_animationData[i].TexMatrixIndex;
-                var texMatrix = mat.TexMatrixIndexes[texMatrixIndex];
+                var texMatrix = mat.TexMatrices[texMatrixIndex];
 
                 Vector3 scale = new Vector3(GetAnimValue(m_animationData[i].ScalesX, ftime), GetAnimValue(m_animationData[i].ScalesY, ftime), GetAnimValue(m_animationData[i].ScalesZ, ftime));
                 Vector3 rot = new Vector3(GetAnimValue(m_animationData[i].RotationsX, ftime), GetAnimValue(m_animationData[i].RotationsY, ftime), GetAnimValue(m_animationData[i].RotationsZ, ftime));

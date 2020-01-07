@@ -90,6 +90,25 @@ namespace JStudio.J3D
 			// PrintHierarchy(m_hierarchy, 0);
         }
 
+        public void LinkData(MAT3 materials, SHP1 shapes)
+        {
+            LinkMaterialsToShapesRecursive(HierarchyRoot, null, materials, shapes);
+        }
+
+        private void LinkMaterialsToShapesRecursive(HierarchyNode parent, Material current_material, MAT3 materials, SHP1 shapes)
+        {
+            if (parent.Type == HierarchyDataType.Material)
+                current_material = materials.MaterialList[parent.Value];
+
+            if (parent.Type == HierarchyDataType.Batch)
+                shapes.Shapes[parent.Value].ShapeMaterial = current_material;
+
+            foreach (HierarchyNode node in parent.Children)
+            {
+                LinkMaterialsToShapesRecursive(node, current_material, materials, shapes);
+            }
+        }
+
 		private void PrintHierarchy(HierarchyNode hierarchy, int depth)
 		{
 			for (int i = 0; i < depth; i++)

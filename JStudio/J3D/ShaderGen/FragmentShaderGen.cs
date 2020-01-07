@@ -152,17 +152,17 @@ namespace JStudio.J3D.ShaderGen
             stream.AppendLine();
 
             // Configure inputs to match our outputs from VS
-            if (mat.VtxDesc.AttributeIsEnabled(ShaderAttributeIds.Position))
-                stream.AppendLine("in vec3 Position;");
+            //if (mat.VtxDesc.AttributeIsEnabled(ShaderAttributeIds.Position))
+                //stream.AppendLine("in vec3 Position;");
 
-            if (mat.VtxDesc.AttributeIsEnabled(ShaderAttributeIds.Normal))
-                stream.AppendLine("in vec3 Normal;");
+            //if (mat.VtxDesc.AttributeIsEnabled(ShaderAttributeIds.Normal))
+                //stream.AppendLine("in vec3 Normal;");
 
             //for (int i = 0; i < data.NumChannelControls[mat.NumChannelControlsIndex]; i++)
             stream.AppendLine("in vec4 colors_0;");
             stream.AppendLine("in vec4 colors_1;");
 
-            for (int texGen = 0; texGen < mat.NumTexGensIndex; texGen++)
+            for (int texGen = 0; texGen < mat.NumTexGens; texGen++)
                 stream.AppendLine(string.Format("in vec3 TexGen{0};", texGen));
 
             stream.AppendLine();
@@ -226,22 +226,22 @@ namespace JStudio.J3D.ShaderGen
             // scale (1, 2, 4, 0.5) is applied. Result is optionally clamped before being written to 
             // an output buffer. 
 
-            TevStage tevStage = mat.TevStageInfoIndexes[stageIndex];
-            TevOrder tevOrder = mat.TevOrderInfoIndexes[stageIndex];
+            TevStage tevStage = mat.TevStages[stageIndex];
+            TevOrder tevOrder = mat.TevOrders[stageIndex];
             stream.AppendFormat("\t// TEV Stage {0}\n", stageIndex);
             stream.AppendFormat("\t// Unknown0: {0} ColorInA: {1} ColorInB: {2} ColorInC: {3} ColorInD: {4} ColorOp: {5} ColorBias: {6} ColorScale: {7} ColorClamp: {8} ColorRegId: {9}\n", tevStage.Unknown0, tevStage.ColorIn[0], tevStage.ColorIn[1], tevStage.ColorIn[2], tevStage.ColorIn[3], tevStage.ColorOp, tevStage.ColorBias, tevStage.ColorScale, tevStage.ColorClamp, tevStage.ColorRegister);
             stream.AppendFormat("\t// AlphaInA: {0} AlphaInB: {1} AlphaInC: {2} AlphaInD: {3} AlphaOp: {4} AlphaBias: {5} AlphaScale: {6} AlphaClamp: {7} AlphaRegId: {8} Unknown1: {9}\n", tevStage.AlphaIn[0], tevStage.AlphaIn[1], tevStage.AlphaIn[2], tevStage.AlphaIn[3], tevStage.AlphaOp, tevStage.AlphaBias, tevStage.AlphaScale, tevStage.AlphaClamp, tevStage.AlphaRegister, tevStage.Unknown1);
             stream.AppendFormat("\t// Tev Order TexCoordId: {0} TexMap: {1} ChannelId: {2}\n", tevOrder.TexCoordId, tevOrder.TexMap, tevOrder.ChannelId);
 
-            TevSwapMode swapMode = mat.TevSwapModeIndexes[stageIndex];
-            TevSwapModeTable rasSwapTable = mat.TevSwapModeTableIndexes[swapMode.RasSel];
-            TevSwapModeTable texSwapTable = mat.TevSwapModeTableIndexes[swapMode.TexSel];
+            TevSwapMode swapMode = mat.TevSwapModes[stageIndex];
+            TevSwapModeTable rasSwapTable = mat.TevSwapModeTables[swapMode.RasSel];
+            TevSwapModeTable texSwapTable = mat.TevSwapModeTables[swapMode.TexSel];
             stream.AppendFormat("\t// TEV Swap Mode: RasSel: {0} TexSel: {1}\n", swapMode.RasSel, swapMode.TexSel);
             stream.AppendFormat("\t// Ras Swap Table: R: {0} G: {1} B: {2} A: {3}\n", rasSwapTable.R, rasSwapTable.G, rasSwapTable.B, rasSwapTable.A);
             stream.AppendFormat("\t// Tex Swap Table: R: {0} G: {1} B: {2} A: {3}\n", texSwapTable.R, texSwapTable.G, texSwapTable.B, texSwapTable.A);
 
             int texcoord = (int)tevOrder.TexCoordId;
-            bool bHasTexCoord = (int)tevOrder.TexCoordId < mat.NumTexGensIndex;
+            bool bHasTexCoord = (int)tevOrder.TexCoordId < mat.NumTexGens;
 
             // Build a Swap Mode for swapping texture color input/rasterized color input to the TEV Stage.
             string[] rasSwapModeTable = new string[4];
@@ -310,8 +310,8 @@ namespace JStudio.J3D.ShaderGen
                tevStage.AlphaIn[0] == GXCombineAlphaInput.Konst || tevStage.AlphaIn[1] == GXCombineAlphaInput.Konst ||
                tevStage.AlphaIn[2] == GXCombineAlphaInput.Konst || tevStage.AlphaIn[3] == GXCombineAlphaInput.Konst)
             {
-                GXKonstColorSel kc = mat.TEVKonstColorSelectors[stageIndex];
-                GXKonstAlphaSel ka = mat.TEVKonstAlphaSelectors[stageIndex];
+                GXKonstColorSel kc = mat.KonstColorSelectors[stageIndex];
+                GXKonstAlphaSel ka = mat.KonstAlphaSelectors[stageIndex];
                 stream.AppendFormat("\t// KonstColorSel: {0} KonstAlphaSel: {1}\n", kc, ka);
                 stream.AppendFormat("\tkonsttemp = vec4({0}, {1});\n", m_tevKSelTableC[(int)kc], m_tevKSelTableA[(int)ka]);
             }
@@ -481,12 +481,12 @@ namespace JStudio.J3D.ShaderGen
         private static void WriteFog(StringBuilder stream, Material mat, MAT3 data)
         {
             // If it's not enabled, no fog.
-            if (!mat.FogModeIndex.Enable)
+            if (!mat.Fog.Enable)
                 return;
 
             Console.WriteLine("Unsupported Material Data: Fog");
             // Perspective
-            if(mat.FogModeIndex.Type == 0)
+            if(mat.Fog.Type == 0)
             {
                 // ze = A/B9-(Zs >> B_SHF)
                 //stream.AppendFormat("\tfloat ze = (cfogf[1].x * ")

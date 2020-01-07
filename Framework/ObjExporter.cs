@@ -49,7 +49,7 @@ namespace JStudio.Framework
                 // reliably determine from a TEV material. We also are forced to use the first TextureIndex,
                 // even though there can be up to 8.
 
-                int textureIndex = mat.TextureIndexes[0];
+                int textureIndex = mat.TextureIndices[0];
                 if (textureIndex < 0)
                     continue;
 
@@ -77,7 +77,7 @@ namespace JStudio.Framework
 
         private static void AssignMaterialsToMeshBatchesRecursive(J3D.J3D file, Obj.MaterialLibrary matLibrary, IList<Obj.Object> objObjects, HierarchyNode curNode, ref Obj.ObjMaterial curMaterial)
         {
-            switch (curNode.Type)
+            /*switch (curNode.Type)
             {
                 case HierarchyDataType.Material: curMaterial = matLibrary.Materials[file.MAT3Tag.MaterialRemapTable[curNode.Value]]; break;
                 case HierarchyDataType.Batch:
@@ -87,7 +87,7 @@ namespace JStudio.Framework
             }
 
             foreach (var child in curNode.Children)
-                AssignMaterialsToMeshBatchesRecursive(file, matLibrary, objObjects, child, ref curMaterial);
+                AssignMaterialsToMeshBatchesRecursive(file, matLibrary, objObjects, child, ref curMaterial);*/
         }
     }
 }

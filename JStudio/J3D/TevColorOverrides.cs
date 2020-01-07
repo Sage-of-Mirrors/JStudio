@@ -53,10 +53,10 @@ namespace JStudio.J3D
             psBlock.Color2 = m_colorsEnabled[2] ? m_colors[2] : srcMaterial.TevColorIndexes[2];
             psBlock.Color3 = m_colorsEnabled[3] ? m_colors[3] : srcMaterial.TevColorIndexes[3];
 
-            psBlock.kColor0 = m_kColorsEnabled[0] ? m_kColors[0] : srcMaterial.TevKonstColorIndexes[0];
-            psBlock.kColor1 = m_kColorsEnabled[1] ? m_kColors[1] : srcMaterial.TevKonstColorIndexes[1];
-            psBlock.kColor2 = m_kColorsEnabled[2] ? m_kColors[2] : srcMaterial.TevKonstColorIndexes[2];
-            psBlock.kColor3 = m_kColorsEnabled[3] ? m_kColors[3] : srcMaterial.TevKonstColorIndexes[3];
+            psBlock.kColor0 = m_kColorsEnabled[0] ? m_kColors[0] : srcMaterial.KonstColors[0];
+            psBlock.kColor1 = m_kColorsEnabled[1] ? m_kColors[1] : srcMaterial.KonstColors[1];
+            psBlock.kColor2 = m_kColorsEnabled[2] ? m_kColors[2] : srcMaterial.KonstColors[2];
+            psBlock.kColor3 = m_kColorsEnabled[3] ? m_kColors[3] : srcMaterial.KonstColors[3];
         }
 
         protected void OnPropertyChanged(string propertyName)

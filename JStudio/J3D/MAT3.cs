@@ -8,52 +8,43 @@ using WindEditor;
 
 namespace JStudio.J3D
 {
-    public class Material : INotifyPropertyChanged
+    public class Material
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        public string Name { get; set; }
+        public Shader Shader { get; set; }
 
-        public string Name { get { return m_name; } set { m_name = value; OnPropertyChanged(); } }
-        public Shader Shader { get; internal set; }
-        public VertexDescription VtxDesc { get; internal set; }
-
-        public byte Flag { get { return m_flag; } set { m_flag = value; OnPropertyChanged(); } }
+        public byte Flag { get; set; }
         public bool IsTranslucent { get { return (Flag & 3) == 0; } }
 
-        public GXCullMode CullMode { get { return m_cullMode; } set { m_cullMode = value; OnPropertyChanged(); } }
-        public byte NumChannelControls { get { return m_numChannelControls; } set { m_numChannelControls = value; OnPropertyChanged(); } }
-        public byte NumTexGensIndex { get; internal set; }
+        public GXCullMode CullMode { get; set; }
+        public byte NumChannelControls { get; set; }
+        public byte NumTexGens { get; internal set; }
         public byte NumTevStages { get; internal set; }
-        public bool ZCompLocIndex { get; internal set; }
-        public ZMode ZModeIndex { get; internal set; }
-        public bool DitherIndex { get; internal set; }
-        public WLinearColor[] MaterialColorIndexes { get; internal set; }
+        public bool ZCompLoc { get; internal set; }
+        public ZMode ZMode { get; internal set; }
+        public bool Dither { get; internal set; }
+        public WLinearColor[] MaterialColors { get; internal set; }
         public ColorChannelControl[] ColorChannelControls { get; internal set; }
-        public WLinearColor[] AmbientColorIndexes { get; internal set; }
-        public WLinearColor[] LightingColorIndexes { get; internal set; }
-        public TexCoordGen[] TexGenInfoIndexes { get; internal set; }
-        public TexCoordGen[] PostTexGenInfoIndexes { get; internal set; }
-        public TexMatrix[] TexMatrixIndexes { get; internal set; }
-        public TexMatrix[] PostTexMatrixIndexes { get; internal set; }
-        public short[] TextureIndexes { get; internal set; }
-        public WLinearColor[] TevKonstColorIndexes { get; internal set; }
-        public GXKonstColorSel[] TEVKonstColorSelectors { get; internal set; }
-        public GXKonstAlphaSel[] TEVKonstAlphaSelectors { get; internal set; }
-        public TevOrder[] TevOrderInfoIndexes { get; internal set; }
+        public WLinearColor[] AmbientColors { get; internal set; }
+        public WLinearColor[] LightingColors { get; internal set; }
+        public TexCoordGen[] TexGens { get; internal set; }
+        public TexCoordGen[] PostTexGens { get; internal set; }
+        public TexMatrix[] TexMatrices { get; internal set; }
+        public TexMatrix[] PostTexMatrices { get; internal set; }
+        public short[] TextureIndices { get; internal set; }
+        public WLinearColor[] KonstColors { get; internal set; }
+        public GXKonstColorSel[] KonstColorSelectors { get; internal set; }
+        public GXKonstAlphaSel[] KonstAlphaSelectors { get; internal set; }
+        public TevOrder[] TevOrders { get; internal set; }
         public WLinearColor[] TevColorIndexes { get; internal set; }
-        public TevStage[] TevStageInfoIndexes { get; internal set; }
-        public TevSwapMode[] TevSwapModeIndexes { get; internal set; }
-        public TevSwapModeTable[] TevSwapModeTableIndexes { get; internal set; }
+        public TevStage[] TevStages { get; internal set; }
+        public TevSwapMode[] TevSwapModes { get; internal set; }
+        public TevSwapModeTable[] TevSwapModeTables { get; internal set; }
         public short[] UnknownIndexes { get; internal set; }
-        public FogInfo FogModeIndex { get; internal set; }
+        public FogInfo Fog { get; internal set; }
         public AlphaTest AlphaTest { get; internal set; }
-        public BlendMode BlendModeIndex { get; internal set; }
+        public BlendMode BlendMode { get; internal set; }
         public NBTScale UnknownIndex2 { get; internal set; } // Tentatively named NBTScale
-
-
-        private string m_name;
-        private byte m_flag;
-        private GXCullMode m_cullMode;
-        private byte m_numChannelControls;
 
         public void Bind()
         {
@@ -63,11 +54,6 @@ namespace JStudio.J3D
         public override string ToString()
         {
             return Name;
-        }
-
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 
@@ -142,15 +128,15 @@ namespace JStudio.J3D
                 material.Flag = flag;
                 material.CullMode = ReadEntry(reader, ReadCullMode, chunkStart, offsets, 4, reader.ReadByte(), 4);
                 material.NumChannelControls = ReadEntry(reader, ReadByte, chunkStart, offsets, 6, reader.ReadByte(), 1);
-                material.NumTexGensIndex = ReadEntry(reader, ReadByte, chunkStart, offsets, 10, reader.ReadByte(), 1);
+                material.NumTexGens = ReadEntry(reader, ReadByte, chunkStart, offsets, 10, reader.ReadByte(), 1);
                 material.NumTevStages = ReadEntry(reader, ReadByte, chunkStart, offsets, 19, reader.ReadByte(), 1);
-                material.ZCompLocIndex = ReadEntry(reader, ReadBool, chunkStart, offsets, 27, reader.ReadByte(), 1);
-                material.ZModeIndex = ReadEntry(reader, ReadZMode, chunkStart, offsets, 26, reader.ReadByte(), 4);
-                material.DitherIndex = ReadEntry(reader, ReadBool, chunkStart, offsets, 28, reader.ReadByte(), 1);
+                material.ZCompLoc = ReadEntry(reader, ReadBool, chunkStart, offsets, 27, reader.ReadByte(), 1);
+                material.ZMode = ReadEntry(reader, ReadZMode, chunkStart, offsets, 26, reader.ReadByte(), 4);
+                material.Dither = ReadEntry(reader, ReadBool, chunkStart, offsets, 28, reader.ReadByte(), 1);
 
-                material.MaterialColorIndexes = new WLinearColor[2];
-                for (int i = 0; i < material.MaterialColorIndexes.Length; i++)
-                    material.MaterialColorIndexes[i] = ReadEntry(reader, ReadColor32, chunkStart, offsets, 5, reader.ReadInt16(), 4);
+                material.MaterialColors = new WLinearColor[2];
+                for (int i = 0; i < material.MaterialColors.Length; i++)
+                    material.MaterialColors[i] = ReadEntry(reader, ReadColor32, chunkStart, offsets, 5, reader.ReadInt16(), 4);
 
 
                 material.ColorChannelControls = new ColorChannelControl[4];
@@ -161,9 +147,9 @@ namespace JStudio.J3D
                         material.ColorChannelControls[i] = ReadEntry(reader, ReadChannelControl, chunkStart, offsets, 7, val, 8);
                 }
 
-                material.AmbientColorIndexes = new WLinearColor[2];
-                for (int i = 0; i < material.AmbientColorIndexes.Length; i++)
-                    material.AmbientColorIndexes[i] = ReadEntry(reader, ReadColor32, chunkStart, offsets, 8, reader.ReadInt16(), 4);
+                material.AmbientColors = new WLinearColor[2];
+                for (int i = 0; i < material.AmbientColors.Length; i++)
+                    material.AmbientColors[i] = ReadEntry(reader, ReadColor32, chunkStart, offsets, 8, reader.ReadInt16(), 4);
 
                 var lightColorList = new List<WLinearColor>();
                 for (int i = 0; i < 8; i++)
@@ -172,7 +158,7 @@ namespace JStudio.J3D
                     if (val >= 0)
                         lightColorList.Add(ReadEntry(reader, ReadColorShort, chunkStart, offsets, 9, val, 8));
                 }
-                material.LightingColorIndexes = lightColorList.ToArray();
+                material.LightingColors = lightColorList.ToArray();
 
                 var texGenInfoList = new List<TexCoordGen>();
                 for (int i = 0; i < 8; i++)
@@ -181,7 +167,7 @@ namespace JStudio.J3D
                     if (val >= 0)
                         texGenInfoList.Add(ReadEntry(reader, ReadTexCoordGen, chunkStart, offsets, 11, val, 4));
                 }
-                material.TexGenInfoIndexes = texGenInfoList.ToArray();
+                material.TexGens = texGenInfoList.ToArray();
 
                 var postTexGenInfoList = new List<TexCoordGen>();
                 for (int i = 0; i < 8; i++)
@@ -192,7 +178,7 @@ namespace JStudio.J3D
 					else
 						postTexGenInfoList.Add(new TexCoordGen());
                 }
-                material.PostTexGenInfoIndexes = postTexGenInfoList.ToArray();
+                material.PostTexGens = postTexGenInfoList.ToArray();
 
                 var texMatrixList = new List<TexMatrix>();
                 for (int i = 0; i < 10; i++)
@@ -203,7 +189,7 @@ namespace JStudio.J3D
 					else
 						texMatrixList.Add(new TexMatrix());
                 }
-                material.TexMatrixIndexes = texMatrixList.ToArray();
+                material.TexMatrices = texMatrixList.ToArray();
 
                 var postTexMatrixList = new List<TexMatrix>();
                 for (int i = 0; i < 20; i++)
@@ -219,25 +205,25 @@ namespace JStudio.J3D
 							postTexMatrixList.Add(entry);
 					}
                 }
-                material.PostTexMatrixIndexes = postTexMatrixList.ToArray();
+                material.PostTexMatrices = postTexMatrixList.ToArray();
 
-                material.TextureIndexes = new short[8];
-                for (int i = 0; i < material.TextureIndexes.Length; i++)
-                    material.TextureIndexes[i] = reader.ReadInt16();
+                material.TextureIndices = new short[8];
+                for (int i = 0; i < material.TextureIndices.Length; i++)
+                    material.TextureIndices[i] = reader.ReadInt16();
 
-                material.TevKonstColorIndexes = new WLinearColor[4];
-                for (int i = 0; i < material.TevKonstColorIndexes.Length; i++)
-                    material.TevKonstColorIndexes[i] = ReadEntry(reader, ReadColor32, chunkStart, offsets, 18, reader.ReadInt16(), 4);
-
-                // Guessing that this one doesn't index anything else as it's just an enum value and there doesn't seem to be an offset for it in the header.
-                material.TEVKonstColorSelectors = new GXKonstColorSel[16];
-                for (int i = 0; i < material.TEVKonstColorSelectors.Length; i++)
-                    material.TEVKonstColorSelectors[i] = (GXKonstColorSel)reader.ReadByte();
+                material.KonstColors = new WLinearColor[4];
+                for (int i = 0; i < material.KonstColors.Length; i++)
+                    material.KonstColors[i] = ReadEntry(reader, ReadColor32, chunkStart, offsets, 18, reader.ReadInt16(), 4);
 
                 // Guessing that this one doesn't index anything else as it's just an enum value and there doesn't seem to be an offset for it in the header.
-                material.TEVKonstAlphaSelectors = new GXKonstAlphaSel[16];
-                for (int i = 0; i < material.TEVKonstAlphaSelectors.Length; i++)
-                    material.TEVKonstAlphaSelectors[i] = (GXKonstAlphaSel)reader.ReadByte();
+                material.KonstColorSelectors = new GXKonstColorSel[16];
+                for (int i = 0; i < material.KonstColorSelectors.Length; i++)
+                    material.KonstColorSelectors[i] = (GXKonstColorSel)reader.ReadByte();
+
+                // Guessing that this one doesn't index anything else as it's just an enum value and there doesn't seem to be an offset for it in the header.
+                material.KonstAlphaSelectors = new GXKonstAlphaSel[16];
+                for (int i = 0; i < material.KonstAlphaSelectors.Length; i++)
+                    material.KonstAlphaSelectors[i] = (GXKonstAlphaSel)reader.ReadByte();
 
                 var tevOrderInfoList = new List<TevOrder>();
                 for (int i = 0; i < 16; i++)
@@ -246,7 +232,7 @@ namespace JStudio.J3D
                     if (val >= 0)
                         tevOrderInfoList.Add(ReadEntry(reader, ReadTevOrder, chunkStart, offsets, 16, val, 4));
                 }
-                material.TevOrderInfoIndexes = tevOrderInfoList.ToArray();
+                material.TevOrders = tevOrderInfoList.ToArray();
 
                 material.TevColorIndexes = new WLinearColor[4];
                 for (int i = 0; i < material.TevColorIndexes.Length; i++)
@@ -262,7 +248,7 @@ namespace JStudio.J3D
                     if (val >= 0)
                         tevStageInfoList.Add(ReadEntry(reader, ReadTevCombinerStage, chunkStart, offsets, 20, val, 20));
                 }
-                material.TevStageInfoIndexes = tevStageInfoList.ToArray();
+                material.TevStages = tevStageInfoList.ToArray();
 
                 var tevSwapModeList = new List<TevSwapMode>();
                 for (int i = 0; i < 16; i++)
@@ -271,21 +257,23 @@ namespace JStudio.J3D
                     if (val >= 0)
                         tevSwapModeList.Add(ReadEntry(reader, ReadTevSwapMode, chunkStart, offsets, 21, val, 4));
                 }
-                material.TevSwapModeIndexes = tevSwapModeList.ToArray();
+                material.TevSwapModes = tevSwapModeList.ToArray();
 
-                material.TevSwapModeTableIndexes = new TevSwapModeTable[4];
-                for (int i = 0; i < material.TevSwapModeTableIndexes.Length; i++)
-                    material.TevSwapModeTableIndexes[i] = ReadEntry(reader, ReadTevSwapModeTable, chunkStart, offsets, 22, reader.ReadInt16(), 4);
+                material.TevSwapModeTables = new TevSwapModeTable[4];
+                for (int i = 0; i < material.TevSwapModeTables.Length; i++)
+                    material.TevSwapModeTables[i] = ReadEntry(reader, ReadTevSwapModeTable, chunkStart, offsets, 22, reader.ReadInt16(), 4);
 
                 // We're still not sure what these are, but they're not TevSwapModeTables, because those are 4 bytes each.
                 material.UnknownIndexes = new short[12];
                 for (int l = 0; l < material.UnknownIndexes.Length; l++)
                 material.UnknownIndexes[l] = reader.ReadInt16();
 
-                material.FogModeIndex = ReadEntry(reader, ReadFogInfo, chunkStart, offsets, 23, reader.ReadInt16(), 44);
+                material.Fog = ReadEntry(reader, ReadFogInfo, chunkStart, offsets, 23, reader.ReadInt16(), 44);
                 material.AlphaTest = ReadEntry(reader, ReadAlphaCompare, chunkStart, offsets, 24, reader.ReadInt16(), 8);
-                material.BlendModeIndex = ReadEntry(reader, ReadBlendMode, chunkStart, offsets, 25, reader.ReadInt16(), 4);
+                material.BlendMode = ReadEntry(reader, ReadBlendMode, chunkStart, offsets, 25, reader.ReadInt16(), 4);
                 material.UnknownIndex2 = ReadEntry(reader, ReadNBTScale, chunkStart, offsets, 29, reader.ReadInt16(), 16);
+
+                material.Shader = ShaderGen.TEVShaderGenerator.GenerateShader(material, null, true);
             }
         }
 

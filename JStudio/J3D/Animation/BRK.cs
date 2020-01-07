@@ -87,13 +87,13 @@ namespace JStudio.J3D.Animation
                 if (mat == null)
                     continue;
 
-                var col = mat.TevKonstColorIndexes[m_konstAnimationData[i].ColorID];
+                var col = mat.KonstColors[m_konstAnimationData[i].ColorID];
                 float newR = GetAnimValue(m_konstAnimationData[i].RedChannel, ftime);
                 float newG = GetAnimValue(m_konstAnimationData[i].GreenChannel, ftime);
                 float newB = GetAnimValue(m_konstAnimationData[i].BlueChannel, ftime);
                 float newA = GetAnimValue(m_konstAnimationData[i].AlphaChannel, ftime);
 
-                mat.TevKonstColorIndexes[m_konstAnimationData[i].ColorID] = new WindEditor.WLinearColor(newR, newG, newB, newA);
+                mat.KonstColors[m_konstAnimationData[i].ColorID] = new WindEditor.WLinearColor(newR, newG, newB, newA);
             }
         }
 

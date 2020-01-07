@@ -17,7 +17,7 @@ namespace JStudio.J3D
         {
             EnabledAttributes = new List<ShaderAttributeIds>();
 
-            m_BufferIds = new int[16];
+            m_BufferIds = new int[17];
             for (int i = 0; i < m_BufferIds.Length; i++)
             {
                 m_BufferIds[i] = -1;
@@ -40,6 +40,8 @@ namespace JStudio.J3D
                     return 3;
                 case ShaderAttributeIds.Color0:
                 case ShaderAttributeIds.Color1:
+                case ShaderAttributeIds.SkinIndices:
+                case ShaderAttributeIds.SkinWeights:
                     return 4;
                 case ShaderAttributeIds.Tex0:
                 case ShaderAttributeIds.Tex1:
@@ -50,8 +52,6 @@ namespace JStudio.J3D
                 case ShaderAttributeIds.Tex6:
                 case ShaderAttributeIds.Tex7:
                     return 2;
-                case ShaderAttributeIds.PosMtxIndex:
-                    return 1;
                 default:
                     Console.WriteLine($"Unsupported attribute: {attribute} in GetAttributeSize!");
                     return 0;
@@ -64,7 +64,6 @@ namespace JStudio.J3D
             {
                 case ShaderAttributeIds.Position:
                 case ShaderAttributeIds.Normal:
-                case ShaderAttributeIds.Binormal:
                 case ShaderAttributeIds.Color0:
                 case ShaderAttributeIds.Color1:
                 case ShaderAttributeIds.Tex0:
@@ -75,10 +74,9 @@ namespace JStudio.J3D
                 case ShaderAttributeIds.Tex5:
                 case ShaderAttributeIds.Tex6:
                 case ShaderAttributeIds.Tex7:
+                case ShaderAttributeIds.SkinIndices:
+                case ShaderAttributeIds.SkinWeights:
                     return VertexAttribPointerType.Float;
-                case ShaderAttributeIds.PosMtxIndex:
-                    return VertexAttribPointerType.Int;
-
                 default:
                     Console.WriteLine("Unsupported ShaderAttributeId: {0}", attribute);
                     return VertexAttribPointerType.Float;
@@ -91,10 +89,11 @@ namespace JStudio.J3D
             {
                 case ShaderAttributeIds.Position:
                 case ShaderAttributeIds.Normal:
-                case ShaderAttributeIds.Binormal:
                     return 4 * 3;
                 case ShaderAttributeIds.Color0:
                 case ShaderAttributeIds.Color1:
+                case ShaderAttributeIds.SkinIndices:
+                case ShaderAttributeIds.SkinWeights:
                     return 4 * 4;
                 case ShaderAttributeIds.Tex0:
                 case ShaderAttributeIds.Tex1:
@@ -105,8 +104,6 @@ namespace JStudio.J3D
                 case ShaderAttributeIds.Tex6:
                 case ShaderAttributeIds.Tex7:
                     return 4 * 2;
-                case ShaderAttributeIds.PosMtxIndex:
-                    return 4 * 1;
                 default:
                     Console.WriteLine("Unsupported ShaderAttributeId: {0}", attribute);
                     return 0;
@@ -127,6 +124,9 @@ namespace JStudio.J3D
         {
             m_BufferIds[(int)attribute] = GL.GenBuffer();
             EnabledAttributes.Add(attribute);
+
+            string debug_name = attribute.ToString();
+            GL.ObjectLabel(ObjectLabelIdentifier.Buffer, m_BufferIds[(int)attribute], debug_name.Length, debug_name);
         }
 
         #region IDisposable Support

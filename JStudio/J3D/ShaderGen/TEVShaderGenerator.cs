@@ -2,6 +2,7 @@
 using OpenTK.Graphics.OpenGL;
 using System;
 using System.IO;
+using System.Text;
 
 namespace JStudio.J3D.ShaderGen
 {
@@ -20,7 +21,7 @@ namespace JStudio.J3D.ShaderGen
                 string filenameHash = string.Format("ShaderDump/{0}.vert", fromMat.Name);
 
                 bool loadedFromDisk = File.Exists(filenameHash) && m_allowCachedOverride;
-                string vertexShader = loadedFromDisk ? File.ReadAllText(filenameHash) : VertexShaderGen.GenerateVertexShader(fromMat, data);
+                string vertexShader = loadedFromDisk ? File.ReadAllText(filenameHash) : VertexShaderGen.GenerateVertexShader(fromMat);
                 
                 success = shader.CompileSource(vertexShader, ShaderType.VertexShader);
 
@@ -63,6 +64,51 @@ namespace JStudio.J3D.ShaderGen
             return shader;
         }
 
-        
+        public static void GenerateCommonCode(StringBuilder stream, Material mat)
+        {
+            // Shader Header
+            stream.AppendLine("// Automatically Generated File. All changes will be lost.");
+            stream.AppendLine("// Special thanks to Jasper for all shader gen code. Based on the implementation for https://noclip.website/.");
+            stream.AppendLine("#version 330 core");
+            stream.AppendLine();
+
+            stream.AppendLine("layout(row_major, std140) uniform MatrixBlock {");
+            stream.AppendLine("\tmat4x3 ProjectionMatrix;");
+            stream.AppendLine("\tmat4x3 ViewMatrix;");
+            stream.AppendLine("\tmat4x3 BoneMatrices[128];");
+            stream.AppendLine("};\n");
+
+            stream.AppendLine("struct Light {");
+            stream.AppendLine("\tvec4 Position;");
+            stream.AppendLine("\tvec4 Direction;");
+            stream.AppendLine("\tvec4 Color;");
+            stream.AppendLine("\tvec4 CosAtten;");
+            stream.AppendLine("\tvec4 DistAtten;");
+            stream.AppendLine("};\n");
+
+            stream.AppendLine("layout(row_major, std140) uniform MaterialBlock {");
+            stream.AppendLine("\tvec4 AmbientColors[2];");
+            stream.AppendLine("\tvec4 MaterialColors[2];");
+            stream.AppendLine("\tvec4 KonstColors[4];");
+            stream.AppendLine("\tvec4 Colors[4];");
+            stream.AppendLine("\tvec4 TextureParams[8];");
+            stream.AppendLine("\tmat4x3 TexMatrices[10];");
+            stream.AppendLine("\tmat4x2 IndirectTexMatrices[3];");
+
+            if (mat.NumChannelControls > 0)
+            {
+                stream.AppendLine("\n\tLight LightParams[8];");
+            }
+
+            if (mat.PostTexMatrices.Length > 0)
+            {
+                stream.Append("\n\tmat4x3 PostTexMtx[20];");
+            }
+
+            stream.AppendLine("};\n");
+
+            stream.AppendLine("uniform sampler2D Texture[8]");
+            stream.AppendLine();
+        }
     }
 }

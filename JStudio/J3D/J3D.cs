@@ -198,12 +198,7 @@ namespace JStudio.J3D
 
             if (bmt.MaterialsCount != 0)
             {
-                // Generate shaders for the loaded materials.
-                Material dummyMat = null;
-                AssignVertexAttributesToMaterialsRecursive(INF1Tag.HierarchyRoot, ref dummyMat, bmt.MAT3);
-
-                // Now that the vertex attributes are assigned to the materials, generate a shader from the data.
-                GenerateShadersForMaterials(bmt.MAT3, false);
+                INF1Tag.LinkData(bmt.MAT3, SHP1Tag);
             }
 
             m_externalMaterials.Add(bmt);
@@ -423,7 +418,9 @@ namespace JStudio.J3D
                     // SHAPE - Face/Triangle information for model.
                     case "SHP1":
                         SHP1Tag = new SHP1();
-                        SHP1Tag.ReadSHP1FromStream(reader, tagStart, VTX1Tag.VertexData);
+                        SHP1Tag.ReadSHP1FromStream(reader, tagStart);
+
+                        CalculateModelBounds();
                         break;
                     // MATERIAL - Stores materials (which describes how textures, etc. are drawn)
                     case "MAT3":
@@ -444,17 +441,19 @@ namespace JStudio.J3D
                 reader.BaseStream.Position = tagStart + tagSize;
             }
 
-            // To generate shaders we need to know which vertex attributes need to be enabled for the shader. However,
-            // the shader has no knowledge in our book as to what attributes are enabled. Theoretically we could enable
-            // them on the fly as something requested it, but that'd involve more code that I don't want to do right now.
-            // To resolve, we iterate once through the hierarchy to see which mesh is called after a material and bind the
-            // vertex descriptions.
-            Material dummyMat = null;
-            AssignVertexAttributesToMaterialsRecursive(INF1Tag.HierarchyRoot, ref dummyMat, MAT3Tag);
+            INF1Tag.LinkData(MAT3Tag, SHP1Tag);
 
-            // Now that the vertex attributes are assigned to the materials, generate a shader from the data.
-            GenerateShadersForMaterials(MAT3Tag, dumpShaders);
+            SHP1Tag.LinkData(VTX1Tag, DRW1Tag, EVP1Tag);
+            SHP1Tag.UploadShapesToGPU();
 
+            foreach (var jnt in JNT1Tag.BindJoints)
+            {
+                Sockets.Add(jnt.Name, Matrix4.Identity);
+            }
+        }
+
+        private void CalculateModelBounds()
+        {
             // Iterate through the shapes and calculate a bounding box which encompasses all of them.
             Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
             Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
@@ -482,44 +481,6 @@ namespace JStudio.J3D
 
             BoundingBox = new FAABox(min, max);
             BoundingSphere = new FSphere(BoundingBox.Center, BoundingBox.Max.Length);
-
-            foreach (var jnt in JNT1Tag.BindJoints)
-            {
-                Sockets.Add(jnt.Name, Matrix4.Identity);
-            }
-        }
-
-        public void GenerateShadersForMaterials(MAT3 mat3Tag, bool dumpShaders = false)
-        {
-            foreach (var material in mat3Tag.MaterialList)
-            {
-                if (material.VtxDesc == null)
-                {
-                    Console.WriteLine("Skipping generating Shader for Unreferenced Material: {0}", material);
-                    continue;
-                }
-                material.Shader = TEVShaderGenerator.GenerateShader(material, mat3Tag, dumpShaders);
-
-                // Bind the Light Block uniform to the shader
-                GL.BindBufferBase(BufferRangeTarget.UniformBuffer, (int)ShaderUniformBlockIds.LightBlock, m_hardwareLightBuffer);
-                GL.UniformBlockBinding(material.Shader.Program, material.Shader.UniformLightBlock, (int)ShaderUniformBlockIds.LightBlock);
-
-                // Bind the Pixel Shader uniform to the shader
-                GL.BindBufferBase(BufferRangeTarget.UniformBuffer, (int)ShaderUniformBlockIds.PixelShaderBlock, material.Shader.PSBlockUBO);
-                GL.UniformBlockBinding(material.Shader.Program, material.Shader.UniformPSBlock, (int)ShaderUniformBlockIds.PixelShaderBlock);
-            }
-        }
-
-        public void AssignVertexAttributesToMaterialsRecursive(HierarchyNode curNode, ref Material curMaterial, MAT3 matTag)
-        {
-            switch (curNode.Type)
-            {
-                case HierarchyDataType.Material: curMaterial = matTag.MaterialList[curNode.Value]; break;
-                case HierarchyDataType.Batch: curMaterial.VtxDesc = SHP1Tag.Shapes[SHP1Tag.ShapeRemapTable[curNode.Value]].Packets[0].VertexDescription; break;
-            }
-
-            foreach (var child in curNode.Children)
-                AssignVertexAttributesToMaterialsRecursive(child, ref curMaterial, matTag);
         }
 
         public void Tick(float deltaTime)
@@ -575,7 +536,7 @@ namespace JStudio.J3D
 
             // We're going to restore some semblance of state after rendering ourselves, as models often modify weird and arbitrary GX values.
             GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+            //GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
             GL.Enable(EnableCap.DepthTest);
@@ -673,13 +634,13 @@ namespace JStudio.J3D
 
             Shader shader = material.Shader;
 
-            GL.UniformMatrix4(shader.UniformModelMtx, false, ref m_modelMatrix);
-            GL.UniformMatrix4(shader.UniformViewMtx, false, ref m_viewMatrix);
-            GL.UniformMatrix4(shader.UniformProjMtx, false, ref m_projMatrix);
+            //GL.UniformMatrix4(shader.UniformModelMtx, false, ref m_modelMatrix);
+            //GL.UniformMatrix4(shader.UniformViewMtx, false, ref m_viewMatrix);
+            //GL.UniformMatrix4(shader.UniformProjMtx, false, ref m_projMatrix);
 
             for (int i = 0; i < 8; i++)
             {
-                int idx = material.TextureIndexes[i];
+                int idx = material.TextureIndices[i];
                 if (idx < 0) continue;
 
                 //int glTextureIndex = GL.GetUniformLocation(shader.Program, string.Format("Texture[{0}]", i));
@@ -695,7 +656,7 @@ namespace JStudio.J3D
                 tex.Bind(i);
             }
 
-            if (shader.UniformTexMtx >= 0)
+            /*if (shader.UniformTexMtx >= 0)
             {
                 for (int i = 0; i < material.TexMatrixIndexes.Length; i++)
                 {
@@ -726,23 +687,23 @@ namespace JStudio.J3D
 
 					GL.UniformMatrix4(material.PostTexMatrixIndexes[i].MatrixUniformLocationForGPU, true, ref matrix);
 				}
-			}
+			}*/
 
-            var color0Amb = material.AmbientColorIndexes[0];
-            var color0Mat = material.MaterialColorIndexes[0];
-            var color1Amb = material.AmbientColorIndexes[1];
-            var color1Mat = material.MaterialColorIndexes[1];
+            var color0Amb = material.AmbientColors[0];
+            var color0Mat = material.MaterialColors[0];
+            var color1Amb = material.AmbientColors[1];
+            var color1Mat = material.MaterialColors[1];
 
-            if (shader.UniformColor0Amb >= 0) GL.Uniform4(shader.UniformColor0Amb, color0Amb.R, color0Amb.G, color0Amb.B, color0Amb.A);
-            if (shader.UniformColor0Mat >= 0) GL.Uniform4(shader.UniformColor0Mat, color0Mat.R, color0Mat.G, color0Mat.B, color0Mat.A);
-            if (shader.UniformColor1Amb >= 0) GL.Uniform4(shader.UniformColor1Amb, color1Amb.R, color1Amb.G, color1Amb.B, color1Amb.A);
-            if (shader.UniformColor1Mat >= 0) GL.Uniform4(shader.UniformColor1Mat, color1Mat.R, color1Mat.G, color1Mat.B, color1Mat.A);
+            //if (shader.UniformColor0Amb >= 0) GL.Uniform4(shader.UniformColor0Amb, color0Amb.R, color0Amb.G, color0Amb.B, color0Amb.A);
+            //if (shader.UniformColor0Mat >= 0) GL.Uniform4(shader.UniformColor0Mat, color0Mat.R, color0Mat.G, color0Mat.B, color0Mat.A);
+            //if (shader.UniformColor1Amb >= 0) GL.Uniform4(shader.UniformColor1Amb, color1Amb.R, color1Amb.G, color1Amb.B, color1Amb.A);
+            //if (shader.UniformColor1Mat >= 0) GL.Uniform4(shader.UniformColor1Mat, color1Mat.R, color1Mat.G, color1Mat.B, color1Mat.A);
 
             // Set the OpenGL State
-            GXToOpenGL.SetBlendState(material.BlendModeIndex);
+            GXToOpenGL.SetBlendState(material.BlendMode);
             GXToOpenGL.SetCullState(material.CullMode);
-            GXToOpenGL.SetDepthState(material.ZModeIndex, bDepthOnlyPrePass);
-            GXToOpenGL.SetDitherEnabled(material.DitherIndex);
+            GXToOpenGL.SetDepthState(material.ZMode, bDepthOnlyPrePass);
+            GXToOpenGL.SetDitherEnabled(material.Dither);
 
             // Check to see if we've overridden the material's ability to write to the color channel. This is used
             // to add support for bmd/bdl models who have this setting changed through game-code since the bmd/bdl
@@ -779,17 +740,17 @@ namespace JStudio.J3D
 
         private void UpdateFogForPSBlock(ref PSBlock psData, Material mat)
         {
-            psData.FogColor = mat.FogModeIndex.Color;
+            psData.FogColor = mat.Fog.Color;
         }
 
         private void UpdateTextureDimensionsForPSBlock(ref PSBlock psData, Material mat)
         {
             for (int i = 0; i < 8; i++)
             {
-                if (mat.TextureIndexes[i] < 0)
+                if (mat.TextureIndices[i] < 0)
                     continue;
 
-                Texture texture = TEX1Tag.Textures[MAT3Tag.TextureRemapTable[mat.TextureIndexes[i]]];
+                Texture texture = TEX1Tag.Textures[MAT3Tag.TextureRemapTable[mat.TextureIndices[i]]];
                 Vector4 texDimensions = new Vector4(texture.CompressedData.Width, texture.CompressedData.Height, 0, 0);
 
                 switch (i)
@@ -809,7 +770,7 @@ namespace JStudio.J3D
 
         private void RenderBatchByIndex(ushort index)
         {
-            GL.CullFace(CullFaceMode.Back);
+            /*GL.CullFace(CullFaceMode.Back);
             GL.FrontFace(FrontFaceDirection.Cw);
 
             SHP1.Shape shape = SHP1Tag.Shapes[SHP1Tag.ShapeRemapTable[index]];
@@ -819,12 +780,12 @@ namespace JStudio.J3D
                 pak.Bind(m_currentBoundMat.Shader);
                 pak.Draw();
                 pak.Unbind();
-            }
+            }*/
         }
 
         private void UpdatePacketMatrices()
         {
-            foreach (SHP1.Shape s in SHP1Tag.Shapes)
+            /*foreach (SHP1.Shape s in SHP1Tag.Shapes)
             {
                 for (int i = 0; i < s.Packets.Count; i++)
                 {
@@ -836,7 +797,7 @@ namespace JStudio.J3D
                         cur_packet.SkinningMatrices[j] = DRW1Tag.Matrices[cur_index];
                     }
                 }
-            }
+            }*/
         }
 
         public void DrawBoundsForJoints(bool boundingBox, bool boundingSphere, IDebugLineDrawer lineDrawer)
@@ -963,7 +924,7 @@ namespace JStudio.J3D
                 // thus, we're going to test against every (skinned!) triangle in this shape.
                 bool hitTriangle = false;
 
-                foreach (SHP1.Packet pak in shape.Packets)
+                /*foreach (SHP1.Packet pak in shape.MatrixGroups)
                 {
                     List<Vector3> vertexList = new List<Vector3>();
 
@@ -994,7 +955,7 @@ namespace JStudio.J3D
                             rayDidHit = true;
                         }
                     }
-                }
+                }*/
             }
 
             return rayDidHit;
@@ -1004,9 +965,9 @@ namespace JStudio.J3D
         {
             List<DrawCall> calls = new List<DrawCall>();
 
-            foreach (SHP1.Shape shape in SHP1Tag.Shapes)
+            foreach (Shape shape in SHP1Tag.Shapes)
             {
-                calls.AddRange(shape.GenerateDrawCalls());
+                calls.Add(shape.GenerateDrawCall());
             }
 
             return calls;
@@ -1037,8 +998,7 @@ namespace JStudio.J3D
 
                     foreach (var shape in SHP1Tag.Shapes)
                     {
-                        foreach (var pak in shape.Packets)
-                            pak.Dispose();
+                        shape.Dispose();
                     }
 
                     foreach (var kvp in m_textureOverrides)

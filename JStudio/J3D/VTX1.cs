@@ -86,7 +86,6 @@ namespace JStudio.J3D
         public List<Vector2> Tex5 = new List<Vector2>();
         public List<Vector2> Tex6 = new List<Vector2>();
         public List<Vector2> Tex7 = new List<Vector2>();
-        public List<int> PositionMatrixIndexes = new List<int>();
 
         // These will hold the skinning data we upload to the GPU.
         // They're vec4s, but they represent 4 unique values rather
