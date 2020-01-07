@@ -448,6 +448,19 @@ namespace JStudio.J3D
                 AmbientSrc = (GXColorSrc)stream.ReadByte()
             };
 
+            switch ((int)retVal.AttenuationFunction)
+            {
+                case 0:
+                case 2:
+                    break;
+                case 1:
+                    retVal.AttenuationFunction = GXAttenuationFunction.Spec;
+                    break;
+                case 3:
+                    retVal.AttenuationFunction = GXAttenuationFunction.Spot;
+                    break;
+            }
+
             Trace.Assert(stream.ReadUInt16() == 0xFFFF); // Padding
             return retVal;
         }

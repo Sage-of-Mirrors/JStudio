@@ -23,7 +23,7 @@ namespace JStudio.J3D.ShaderGen
             stream.AppendLine("\t\treturn u_PosMtx[t_MtxIdx / 3u];");
             stream.AppendLine("}\n");
 
-            stream.AppendLine("float ApplyCubic(vec3 t_Coeff, float t_Value) {");
+            stream.AppendLine("float ApplyAttenuation(vec3 t_Coeff, float t_Value) {");
             stream.AppendLine("\treturn max(dot(t_Coeff, vec3(1.0, t_Value, t_Value*t_Value)), 0.0);");
             stream.AppendLine("}\n");
 
@@ -61,6 +61,7 @@ namespace JStudio.J3D.ShaderGen
 
             stream.AppendLine($"\tvec3 t_position = { "a" };");
             stream.AppendLine("\tv_Position = t_Position;");
+            stream.AppendLine($"\tvec3 t_Normal = { "a" };");
 
             stream.AppendLine();
 
@@ -74,7 +75,6 @@ namespace JStudio.J3D.ShaderGen
 
             GenerateLightChannels(stream, mat);
 
-            stream.AppendLine();
             stream.AppendLine("\tgl_Position = ProjectionMatrix * ViewMatrix * vec4(t_Position, 1.0);");
 
             stream.AppendLine("}");
@@ -89,21 +89,29 @@ namespace JStudio.J3D.ShaderGen
                 ColorChannelControl color = mat.ColorChannelControls[i * 2];
                 ColorChannelControl alpha = mat.ColorChannelControls[(i * 2) + 1];
 
-                stream.AppendLine($"\t// Color { i }");
-                stream.Append(GenerateColorChannel(color, i));
-                stream.AppendLine($"\tv_Color{ i }.rgb = t_ColorChanTemp.rgb;");
+                if (color.Equals(alpha))
+                {
+                    stream.AppendLine($"\t// Color and Alpha for control { i } were the same! Optimizing...");
+                    stream.AppendLine(GenerateColorChannel(color, i, $"v_Color{ i }"));
+                }
+                else
+                {
+                    stream.AppendLine($"\t// Color { i }");
+                    stream.Append(GenerateColorChannel(color, i, "t_ColorChanTemp"));
+                    stream.AppendLine($"\tv_Color{ i }.rgb = t_ColorChanTemp.rgb;");
 
-                stream.AppendLine();
+                    stream.AppendLine();
 
-                stream.AppendLine($"\t// Alpha { i }");
-                stream.Append(GenerateColorChannel(alpha, i));
-                stream.AppendLine($"\tv_Color{ i }.a = t_ColorChanTemp.a;");
+                    stream.AppendLine($"\t// Alpha { i }");
+                    stream.Append(GenerateColorChannel(alpha, i, "t_ColorChanTemp"));
+                    stream.AppendLine($"\tv_Color{ i }.a = t_ColorChanTemp.a;");
 
-                stream.AppendLine();
+                    stream.AppendLine();
+                }
             }
         }
 
-        private static string GenerateColorChannel(ColorChannelControl chan, int index)
+        private static string GenerateColorChannel(ColorChannelControl chan, int index, string output_name)
         {
             StringBuilder stream = new StringBuilder();
 
@@ -114,7 +122,8 @@ namespace JStudio.J3D.ShaderGen
 
             if (chan.LightingEnabled)
             {
-                generateLightAccum = $"\tt_LightAccum = { ambColorSource };";
+                generateLightAccum = $"\tt_LightAccum = { ambColorSource };\n";
+                generateLightAccum += "\n\t// Lighting calculations! Trig ahoy!\n\n";
 
                 for (int i = 0; i < 8; i++)
                 {
@@ -125,21 +134,36 @@ namespace JStudio.J3D.ShaderGen
 
                     string light_name = $"LightParams[{ i }]";
 
+                    generateLightAccum += "\t// t_LightDelta is a vector pointing from the light to the vertex.\n";
+                    generateLightAccum += "\t// Because the dot product of a vector with itself is the vector's length squared,\n";
+                    generateLightAccum += "\t// we can square root the dot product to get the distance between the light and the vertex.\n";
                     generateLightAccum += $"\tt_LightDelta = { light_name }.Position.xyz - v_Position.xyz;\n";
                     generateLightAccum += "\tt_LightDeltaDist2 = dot(t_LightDelta, t_LightDelta);\n";
-                    generateLightAccum += "\tt_LightDeltaDist = sqrt(t_LightDeltaDist2);\n";
-                    generateLightAccum += "\tt_LightDeltaDir = t_LightDelta / t_LightDeltaDist;\n";
+                    generateLightAccum += "\tt_LightDeltaDist = sqrt(t_LightDeltaDist2);\n\n";
 
-                    generateLightAccum += $"\tt_LightAccum += { GetDiffFn(chan) } * { GetAttnFn(chan, light_name) } * { light_name}.Color;";
+                    generateLightAccum += "\t// Dividing a vector by its length normalizes it.\n";
+                    generateLightAccum += "\t// Doing this with our difference vector gives us the direction of the vertex from the light, without the magnitude.\n";
+                    generateLightAccum += "\tt_LightDeltaDir = t_LightDelta / t_LightDeltaDist;\n\n";
+
+                    generateLightAccum += "\t// This is how much light is hitting the vertex - the cosine of the angle of incidence between the vertex and the light.\n";
+                    generateLightAccum += $"\tfloat diffuse_coeff = { GetDiffFn(chan) };\n\n";
+
+                    generateLightAccum += GenerateAttnFn(chan, light_name);
+
+                    generateLightAccum += "\t// The final color is the ambient color (the base or 'black') with the light's color added to it.\n";
+                    generateLightAccum += "\t// But the color of the light is dampened by the angle at which the light is hitting our vertex (diffuse_coeff)\n";
+                    generateLightAccum += "\t// and the ratio of the angle and distance attenuation behaviors (angle / dist).\n";
+                    generateLightAccum += $"\tt_LightAccum += diffuse_coeff * (angle_attenuation / dist_attenuation) * { light_name }.Color;\n";
                 }
             }
             else
             {
-                generateLightAccum = "\tt_LightAccum = vec4(1.0);";
+                generateLightAccum = "\t// Lighting isn't being applied, so instead of calculating it we'll say the vertex is getting a full blast of white light.\n";
+                generateLightAccum += "\tt_LightAccum = vec4(1.0);";
             }
 
             stream.AppendLine(generateLightAccum);
-            stream.AppendLine($"\tt_ColorChanTemp = { matColorSource } * clamp(t_LightAccum, 0.0, 1.0);");
+            stream.AppendLine($"\t{ output_name } = { matColorSource } * clamp(t_LightAccum, 0.0, 1.0);");
 
             return stream.ToString();
         }
@@ -161,22 +185,33 @@ namespace JStudio.J3D.ShaderGen
             }
         }
 
-        private static string GetAttnFn(ColorChannelControl chan, string light_name)
+        private static string GenerateAttnFn(ColorChannelControl chan, string light_name)
         {
             string attn = $"max(0.0, dot(t_LightDeltaDir, {light_name}.Direction.xyz))";
-            string cosAttn = $"max(0.0, ApplyCubic({ light_name }.CosAtten.xyz, { attn }))";
+            string cosAttn = $"max(0.0, ApplyAttenuation({ light_name }.CosAtten.xyz, { attn }))";
+
+            string output = "\t// This is the falloff behavior of the light as an object moves *around* it.\n";
+            output += $"\tfloat angle_attenuation = { cosAttn };\n\n";
+
+            output += "\t// This is the falloff behavior of the light as an object moves *away from* it.\n";
+            output += "\tfloat dist_attenuation = ";
 
             switch (chan.AttenuationFunction)
             {
                 case GXAttenuationFunction.None:
-                    return "1.0";
+                    output += "1.0;\n\n";
+                    break;
                 case GXAttenuationFunction.Spot:
-                    return $"{ cosAttn } / dot({ light_name }.DistAtten.xyz, vec3(1.0, t_LightDeltaDist, t_LightDeltaDist2))";
+                    output += $"dot({ light_name }.DistAtten.xyz, vec3(1.0, t_LightDeltaDist, t_LightDeltaDist2));\n\n";
+                    break;
                 case GXAttenuationFunction.Spec:
-                    return $"{ cosAttn } / ApplyCubic({ light_name }.DistAtten.xyz, { attn })";
+                    output += $"ApplyAttenuation({ light_name }.DistAtten.xyz, { attn });\n\n";
+                    break;
                 default:
                     return "";
             }
+
+            return output;
         }
 
         private static string GetVertexAttributeType(ShaderAttributeIds id)

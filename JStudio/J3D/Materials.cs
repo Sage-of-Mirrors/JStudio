@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using WindEditor;
+using System.Runtime;
 
 namespace JStudio.J3D
 {
@@ -433,7 +434,7 @@ namespace JStudio.J3D
     /// The <see cref="ColorChannelControl.DiffuseFunction"/> and <see cref="ColorChannelControl.AttenuationFunction"/> parameters control the lighting equation for all lights associated with this channel.
     /// The <see cref="ColorChannelControl.AmbientSrc"/> and <see cref="ColorChannelControl.MaterialSrc"/> used to select whether the input source colors come from the register colors or vertex colors.
     /// </summary>
-    public class ColorChannelControl : INotifyPropertyChanged
+    public class ColorChannelControl : INotifyPropertyChanged, IEquatable<ColorChannelControl>
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -465,6 +466,32 @@ namespace JStudio.J3D
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public bool Equals(ColorChannelControl other)
+        {
+            if (other == null)
+                return false;
+
+            if (m_lightingEnabled != other.m_lightingEnabled)
+                return false;
+            if (m_materialSrc != other.m_materialSrc)
+                return false;
+            if (m_litMask != other.m_litMask)
+                return false;
+            if (m_diffuseFunction != other.m_diffuseFunction)
+                return false;
+            if (m_attenuationFunction != other.m_attenuationFunction)
+                return false;
+            if (m_ambientSrc != other.m_ambientSrc)
+                return false;
+
+            return true;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ColorChannelControl);
         }
     }
 
