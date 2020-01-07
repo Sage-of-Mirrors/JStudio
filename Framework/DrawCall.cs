@@ -29,7 +29,7 @@ namespace JStudio.Framework
         public void Draw()
         {
             BindBuffers();
-            //Material.Bind();
+            Material.Bind();
 
             GL.DrawElements(BeginMode.Triangles, VertexData.IndexCount, DrawElementsType.UnsignedInt, 0);
 

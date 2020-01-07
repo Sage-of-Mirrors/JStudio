@@ -11,7 +11,7 @@ namespace JStudio.J3D
 
         public List<ShaderAttributeIds> EnabledAttributes { get; set; }
         public int IndexBufferId { get; }
-        public int IndexCount { get; }
+        public int IndexCount { get; set; }
 
         public VertexDescription()
         {

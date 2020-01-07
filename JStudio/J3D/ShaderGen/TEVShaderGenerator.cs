@@ -72,8 +72,10 @@ namespace JStudio.J3D.ShaderGen
             stream.AppendLine("#version 330 core");
             stream.AppendLine();
 
+            stream.AppendLine("precision mediump float;\n");
+
             stream.AppendLine("layout(row_major, std140) uniform MatrixBlock {");
-            stream.AppendLine("\tmat4x3 ProjectionMatrix;");
+            stream.AppendLine("\tmat4x4 ProjectionMatrix;");
             stream.AppendLine("\tmat4x3 ViewMatrix;");
             stream.AppendLine("\tmat4x3 BoneMatrices[128];");
             stream.AppendLine("};\n");
@@ -107,7 +109,7 @@ namespace JStudio.J3D.ShaderGen
 
             stream.AppendLine("};\n");
 
-            stream.AppendLine("uniform sampler2D Texture[8]");
+            stream.AppendLine("uniform sampler2D Texture[8];");
             stream.AppendLine();
         }
     }

@@ -74,6 +74,8 @@ namespace JStudio.J3D
 
         public void UploadBuffersToGPU()
         {
+            VertexDescription.IndexCount = Indices.Count;
+
             // Upload the Indexes
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, VertexDescription.IndexBufferId);
             GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(4 * Indices.Count), Indices.ToArray(), BufferUsageHint.StaticDraw);

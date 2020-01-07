@@ -14,15 +14,6 @@ namespace JStudio.J3D.ShaderGen
 
             GenerateVertexAttributes(stream);
 
-            stream.AppendLine("mat4x3 GetPosTexMatrix(uint t_MtxIdx) {");
-            stream.AppendLine($"\tif (t_MtxIdx == { (int)GXTexMatrix.Identity }u)");
-            stream.AppendLine("\t\treturn _Mat4x3(1.0);");
-            stream.AppendLine($"\telse if (t_MtxIdx >= { (int)GXTexMatrix.TexMtx0 }u)");
-            stream.AppendLine($"\t\treturn u_TexMtx[(t_MtxIdx - { (int)GXTexMatrix.TexMtx0 }u) / 3u];");
-            stream.AppendLine("\telse");
-            stream.AppendLine("\t\treturn u_PosMtx[t_MtxIdx / 3u];");
-            stream.AppendLine("}\n");
-
             stream.AppendLine("float ApplyAttenuation(vec3 t_Coeff, float t_Value) {");
             stream.AppendLine("\treturn max(dot(t_Coeff, vec3(1.0, t_Value, t_Value*t_Value)), 0.0);");
             stream.AppendLine("}\n");
@@ -59,23 +50,26 @@ namespace JStudio.J3D.ShaderGen
         {
             stream.AppendLine("void main() {");
 
-            stream.AppendLine($"\tvec3 t_position = { "a" };");
+            stream.AppendLine($"\tvec3 t_Position = { "vec3(1.0)" };");
             stream.AppendLine("\tv_Position = t_Position;");
-            stream.AppendLine($"\tvec3 t_Normal = { "a" };");
+            stream.AppendLine($"\tvec3 t_Normal = { "vec3(1.0)" };");
 
             stream.AppendLine();
 
             stream.AppendLine("\t// Variables for the upcoming lighting calculations.");
             stream.AppendLine("\tvec4 t_LightAccum;");
             stream.AppendLine("\tvec3 t_LightDelta, t_LightDeltaDir;");
-            stream.AppendLine("\tfloat t_LightDeltaDist2, t_LightDeltaDist;");
+            stream.AppendLine("\tfloat t_LightDeltaDist2, t_LightDeltaDist, angle_attenuation, dist_attenuation;");
             stream.AppendLine("\tvec4 t_ColorChanTemp;");
+            stream.AppendLine("\tfloat diffuse_coeff;");
 
             stream.AppendLine();
 
             GenerateLightChannels(stream, mat);
+            GenerateTexGens(stream, mat);
 
-            stream.AppendLine("\tgl_Position = ProjectionMatrix * ViewMatrix * vec4(t_Position, 1.0);");
+            //stream.AppendLine("\tmat4x4 pv = ProjectionMatrix * mat4x4(ViewMatrix);");
+            stream.AppendLine("\tgl_Position = vec4(a_Position, 1.0);");//pv * vec4(t_Position, 1.0);");
 
             stream.AppendLine("}");
         }
@@ -146,7 +140,7 @@ namespace JStudio.J3D.ShaderGen
                     generateLightAccum += "\tt_LightDeltaDir = t_LightDelta / t_LightDeltaDist;\n\n";
 
                     generateLightAccum += "\t// This is how much light is hitting the vertex - the cosine of the angle of incidence between the vertex and the light.\n";
-                    generateLightAccum += $"\tfloat diffuse_coeff = { GetDiffFn(chan) };\n\n";
+                    generateLightAccum += $"\tdiffuse_coeff = { GetDiffFn(chan) };\n\n";
 
                     generateLightAccum += GenerateAttnFn(chan, light_name);
 
@@ -191,10 +185,10 @@ namespace JStudio.J3D.ShaderGen
             string cosAttn = $"max(0.0, ApplyAttenuation({ light_name }.CosAtten.xyz, { attn }))";
 
             string output = "\t// This is the falloff behavior of the light as an object moves *around* it.\n";
-            output += $"\tfloat angle_attenuation = { cosAttn };\n\n";
+            output += $"\tangle_attenuation = { cosAttn };\n\n";
 
             output += "\t// This is the falloff behavior of the light as an object moves *away from* it.\n";
-            output += "\tfloat dist_attenuation = ";
+            output += "\tdist_attenuation = ";
 
             switch (chan.AttenuationFunction)
             {
@@ -214,18 +208,119 @@ namespace JStudio.J3D.ShaderGen
             return output;
         }
 
+        private static string GenerateTexGens(StringBuilder stream, Material mat)
+        {
+            for (int i = 0; i < mat.NumTexGens; i++)
+            {
+                TexCoordGen gen = mat.TexGens[i];
+
+                stream.AppendLine($"\t// TexGen { i } - Type: { gen.Type }, Source: { gen.Source }, Matrix: { gen.TexMatrixSource }");
+                stream.AppendLine($"\tv_Tex{ i } = { GenerateTexGenPost(gen) };\n");
+            }
+
+            return stream.ToString();
+        }
+
+        private static string GenerateTexGenPost(TexCoordGen gen)
+        {
+            StringBuilder stream = new StringBuilder();
+
+            string gen_source = GenerateTexGenSource(gen.Source);
+
+            if (gen.Type == GXTexGenType.SRTG)
+            {
+                return $"vec3({ gen_source }.xy, 1.0)";
+            }
+            else if (gen.Type == GXTexGenType.Matrix2x4)
+            {
+                return $"vec3({ GenerateTexGenMatrixMult(gen, gen_source) }.xy, 1.0)";
+            }
+            else if (gen.Type == GXTexGenType.Matrix3x4)
+            {
+                return GenerateTexGenMatrixMult(gen, gen_source);
+            }
+
+            return stream.ToString();
+        }
+
+        private static string GenerateTexGenSource(GXTexGenSrc src)
+        {
+            switch (src)
+            {
+                case GXTexGenSrc.Position:
+                    return "vec4(a_Position, 1.0)";
+                case GXTexGenSrc.Normal:
+                    return "vec4(a_Normal, 1.0)";
+                case GXTexGenSrc.Color0:
+                    return "v_Color0";
+                case GXTexGenSrc.Color1:
+                    return "v_Color1";
+                case GXTexGenSrc.Tex0:
+                    return "vec4(a_Tex0, 1.0)";
+                case GXTexGenSrc.Tex1:
+                    return "vec4(a_Tex1, 1.0)";
+                case GXTexGenSrc.Tex2:
+                    return "vec4(a_Tex2, 1.0)";
+                case GXTexGenSrc.Tex3:
+                    return "vec4(a_Tex3, 1.0)";
+                case GXTexGenSrc.Tex4:
+                    return "vec4(a_Tex4, 1.0)";
+                case GXTexGenSrc.Tex5:
+                    return "vec4(a_Tex5, 1.0)";
+                case GXTexGenSrc.Tex6:
+                    return "vec4(a_Tex6, 1.0)";
+                case GXTexGenSrc.Tex7:
+                    return "vec4(a_Tex7, 1.0)";
+
+                case GXTexGenSrc.TexCoord0:
+                    return "vec4(v_Tex0, 1.0)";
+                case GXTexGenSrc.TexCoord1:
+                    return "vec4(v_Tex1, 1.0)";
+                case GXTexGenSrc.TexCoord2:
+                    return "vec4(v_Tex2, 1.0)";
+                case GXTexGenSrc.TexCoord3:
+                    return "vec4(v_Tex3, 1.0)";
+                case GXTexGenSrc.TexCoord4:
+                    return "vec4(v_Tex4, 1.0)";
+                case GXTexGenSrc.TexCoord5:
+                    return "vec4(v_Tex5, 1.0)";
+                case GXTexGenSrc.TexCoord6:
+                    return "vec4(v_Tex6, 1.0)";
+
+                default:
+                    return "";
+            }
+        }
+
+        private static string GenerateTexGenMatrixMult(TexCoordGen gen, string src)
+        {
+            if (false)
+            {
+            }
+            else
+            {
+                if (gen.TexMatrixSource == GXTexMatrix.Identity)
+                {
+                    return $"{ src }.xyz";
+                }
+                else if (gen.TexMatrixSource >= GXTexMatrix.TexMtx0)
+                {
+                    int id = (gen.TexMatrixSource - GXTexMatrix.TexMtx0) / 3;
+                    return $"(mat4x4(TexMatrices[{ id }]) * { src })";
+                }
+                else
+                {
+                    return src;
+                }
+            }
+        }
+
         private static string GetVertexAttributeType(ShaderAttributeIds id)
         {
             switch (id)
             {
                 case ShaderAttributeIds.Position:
                 case ShaderAttributeIds.Normal:
-                    return "vec3";
-                case ShaderAttributeIds.Color0:
-                case ShaderAttributeIds.Color1:
-                case ShaderAttributeIds.SkinIndices:
-                case ShaderAttributeIds.SkinWeights:
-                    return "vec4";
                 case ShaderAttributeIds.Tex0:
                 case ShaderAttributeIds.Tex1:
                 case ShaderAttributeIds.Tex2:
@@ -234,7 +329,12 @@ namespace JStudio.J3D.ShaderGen
                 case ShaderAttributeIds.Tex5:
                 case ShaderAttributeIds.Tex6:
                 case ShaderAttributeIds.Tex7:
-                    return "vec2";
+                    return "vec3";
+                case ShaderAttributeIds.Color0:
+                case ShaderAttributeIds.Color1:
+                case ShaderAttributeIds.SkinIndices:
+                case ShaderAttributeIds.SkinWeights:
+                    return "vec4";
                 default:
                     return "";
             }
