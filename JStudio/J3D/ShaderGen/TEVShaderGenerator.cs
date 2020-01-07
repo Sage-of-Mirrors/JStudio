@@ -76,8 +76,8 @@ namespace JStudio.J3D.ShaderGen
 
             stream.AppendLine("layout(row_major, std140) uniform MatrixBlock {");
             stream.AppendLine("\tmat4x4 ProjectionMatrix;");
-            stream.AppendLine("\tmat4x3 ViewMatrix;");
-            stream.AppendLine("\tmat4x3 BoneMatrices[128];");
+            stream.AppendLine("\tmat4x4 ViewMatrix;");
+            stream.AppendLine("\tmat4x4 BoneMatrices[128];");
             stream.AppendLine("};\n");
 
             stream.AppendLine("struct Light {");

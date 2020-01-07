@@ -14,6 +14,10 @@ namespace JStudio.J3D.ShaderGen
 
             GenerateVertexAttributes(stream);
 
+            stream.AppendLine("mat4x4 ApplySkin(uint index) {");
+            stream.AppendLine("\treturn BoneMatrices[index] * a_SkinWeights[index];");
+            stream.AppendLine("}\n");
+
             stream.AppendLine("float ApplyAttenuation(vec3 t_Coeff, float t_Value) {");
             stream.AppendLine("\treturn max(dot(t_Coeff, vec3(1.0, t_Value, t_Value*t_Value)), 0.0);");
             stream.AppendLine("}\n");
@@ -50,9 +54,10 @@ namespace JStudio.J3D.ShaderGen
         {
             stream.AppendLine("void main() {");
 
-            stream.AppendLine($"\tvec3 t_Position = { "vec3(1.0)" };");
+            stream.AppendLine("\tmat4x4 skin = ApplySkin(uint(a_SkinIndices[0])) + ApplySkin(uint(a_SkinIndices[1])) + ApplySkin(uint(a_SkinIndices[2])) + ApplySkin(uint(a_SkinIndices[3]));");
+            stream.AppendLine($"\tvec3 t_Position = (skin * vec4(a_Position, 1.0)).xyz;");
             stream.AppendLine("\tv_Position = t_Position;");
-            stream.AppendLine($"\tvec3 t_Normal = { "vec3(1.0)" };");
+            stream.AppendLine($"\tvec3 t_Normal = (skin * vec4(a_Normal, 1.0)).xyz;");
 
             stream.AppendLine();
 
@@ -68,8 +73,8 @@ namespace JStudio.J3D.ShaderGen
             GenerateLightChannels(stream, mat);
             GenerateTexGens(stream, mat);
 
-            //stream.AppendLine("\tmat4x4 pv = ProjectionMatrix * mat4x4(ViewMatrix);");
-            stream.AppendLine("\tgl_Position = vec4(a_Position, 1.0);");//pv * vec4(t_Position, 1.0);");
+            stream.AppendLine("\tmat4x4 pv = ProjectionMatrix * ViewMatrix;");
+            stream.AppendLine("\tgl_Position = pv * vec4(t_Position, 1.0);");
 
             stream.AppendLine("}");
         }

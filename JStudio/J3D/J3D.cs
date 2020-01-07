@@ -443,12 +443,15 @@ namespace JStudio.J3D
 
             INF1Tag.LinkData(MAT3Tag, SHP1Tag);
 
+            Tick(float.Epsilon);
+            DRW1Tag.UpdateMatrices(JNT1Tag.BindJoints, EVP1Tag);
+
             SHP1Tag.LinkData(VTX1Tag, DRW1Tag, EVP1Tag);
             SHP1Tag.UploadShapesToGPU();
 
             foreach (var jnt in JNT1Tag.BindJoints)
             {
-                Sockets.Add(jnt.Name, Matrix4.Identity);
+                //Sockets.Add(jnt.Name, Matrix4.Identity);
             }
         }
 
@@ -485,14 +488,14 @@ namespace JStudio.J3D
 
         public void Tick(float deltaTime)
         {
-            foreach (var boneAnim in m_boneAnimations)
+            /*foreach (var boneAnim in m_boneAnimations)
                 boneAnim.Tick(deltaTime);
 
             foreach (var matAnim in m_materialAnimations)
                 matAnim.Tick(deltaTime);
 
             foreach (var regAnim in m_registerAnimations)
-                regAnim.Tick(deltaTime);
+                regAnim.Tick(deltaTime);*/
 
             List<SkeletonJoint> active_list = null;
 

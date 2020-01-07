@@ -538,7 +538,7 @@ namespace JStudio.J3D
                             // will tell us.
                             Trace.Assert(envelope.NumBones <= 4);
 
-                            Vector4 indices = new Vector4(-1, -1, -1, -1);
+                            Vector4 indices = new Vector4(0, 0, 0, 0);
                             Vector4 weights = new Vector4(0, 0, 0, 0);
 
                             for (int i = 0; i < envelope.NumBones; i++)

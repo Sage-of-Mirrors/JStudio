@@ -36,14 +36,17 @@ namespace JStudio.J3D
 
         public void UpdateMatrices(IList<SkeletonJoint> bones, EVP1 envelopes)
         {
-            Matrix4[] bone_mats = new Matrix4[bones.Count];
+            Matrices = new Matrix4[bones.Count];
 
             for (int i = 0; i < bones.Count; i++)
             {
-                bone_mats[i] = bones[i].TransformMatrix;
+                Matrix4 sm1 = envelopes.InverseBindPose[i];
+                Matrix4 sm2 = bones[i].TransformMatrix;
+
+                Matrices[i] = Matrix4.Mult(sm1, sm2);
             }
 
-            for (int i = 0; i < Matrices.Length; i++)
+            /*for (int i = 0; i < Matrices.Length; i++)
             {
                 if (IsPartiallyWeighted[i])
                 {
@@ -64,7 +67,7 @@ namespace JStudio.J3D
                 {
                     Matrices[i] = bone_mats[TransformIndexTable[i]];
                 }
-            }
+            }*/
         }
     }
 }

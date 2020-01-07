@@ -31,13 +31,13 @@ namespace JStudio.Framework
         [FieldOffset(1536)] public Matrix4x3[] PostTexMtx;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 6400)]
+    [StructLayout(LayoutKind.Explicit, Size = 8448)]
     public struct MatrixBlock
     {
         // Main matrices
-        [FieldOffset(0)] public Matrix4x3 ProjectionMat;
-        [FieldOffset(48)] public Matrix4x3 ViewMat;
+        [FieldOffset(0)] public Matrix4 ProjectionMat;
+        [FieldOffset(64)] public Matrix4 ViewMat;
 
-        [FieldOffset(96)] public Matrix4x3[] BoneMatrices; // There's space for a max of 128 here
+        [FieldOffset(128)] public Matrix4[] BoneMatrices; // There's space for a max of 128 here
     }
 }
