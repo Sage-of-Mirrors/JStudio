@@ -14,8 +14,8 @@ namespace JStudio.J3D.ShaderGen
 
             GenerateVertexAttributes(stream);
 
-            stream.AppendLine("mat4x4 ApplySkin(uint index) {");
-            stream.AppendLine("\treturn BoneMatrices[index] * a_SkinWeights[index];");
+            stream.AppendLine("mat4x4 ApplySkin(int index) {");
+            stream.AppendLine("\treturn BoneMatrices[uint(a_SkinIndices[index])] * a_SkinWeights[index];");
             stream.AppendLine("}\n");
 
             stream.AppendLine("float ApplyAttenuation(vec3 t_Coeff, float t_Value) {");
@@ -54,7 +54,7 @@ namespace JStudio.J3D.ShaderGen
         {
             stream.AppendLine("void main() {");
 
-            stream.AppendLine("\tmat4x4 skin = ApplySkin(uint(a_SkinIndices[0])) + ApplySkin(uint(a_SkinIndices[1])) + ApplySkin(uint(a_SkinIndices[2])) + ApplySkin(uint(a_SkinIndices[3]));");
+            stream.AppendLine("\tmat4x4 skin = ApplySkin(0) + ApplySkin(1) + ApplySkin(2) + ApplySkin(3);");
             stream.AppendLine($"\tvec3 t_Position = (skin * vec4(a_Position, 1.0)).xyz;");
             stream.AppendLine("\tv_Position = t_Position;");
             stream.AppendLine($"\tvec3 t_Normal = (skin * vec4(a_Normal, 1.0)).xyz;");

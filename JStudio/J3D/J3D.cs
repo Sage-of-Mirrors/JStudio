@@ -444,15 +444,16 @@ namespace JStudio.J3D
             INF1Tag.LinkData(MAT3Tag, SHP1Tag);
 
             Tick(float.Epsilon);
+
+            if (EVP1Tag.InverseBindPose.Count <= 0)
+            {
+                EVP1Tag.GenerateInverseBindMatrices(JNT1Tag);
+            }
+
             DRW1Tag.UpdateMatrices(JNT1Tag.BindJoints, EVP1Tag);
 
             SHP1Tag.LinkData(VTX1Tag, DRW1Tag, EVP1Tag);
             SHP1Tag.UploadShapesToGPU();
-
-            foreach (var jnt in JNT1Tag.BindJoints)
-            {
-                //Sockets.Add(jnt.Name, Matrix4.Identity);
-            }
         }
 
         private void CalculateModelBounds()

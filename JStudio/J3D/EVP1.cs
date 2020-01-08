@@ -87,5 +87,13 @@ namespace JStudio.J3D
                 InverseBindPose.Add(bindPoseMatrix);
             }
         }
+
+        public void GenerateInverseBindMatrices(JNT1 skeleton)
+        {
+            for (int i = 0; i < skeleton.BindJoints.Count; i++)
+            {
+                InverseBindPose.Add(Matrix4.Identity);
+            }
+        }
     }
 }

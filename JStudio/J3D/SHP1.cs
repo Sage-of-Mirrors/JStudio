@@ -520,6 +520,8 @@ namespace JStudio.J3D
         {
             foreach (Shape shape in Shapes)
             {
+                int vertex_index = 0;
+
                 shape.VertexDescription.EnableAttribute(ShaderAttributeIds.SkinIndices);
                 shape.VertexDescription.EnableAttribute(ShaderAttributeIds.SkinWeights);
 
@@ -528,10 +530,13 @@ namespace JStudio.J3D
                     foreach (MeshVertexIndex vertex in group.Indices)
                     {
                         int draw_mat_index = vertex.PosMtxIndex >= 0 ? group.MatrixDataTable.MatrixTable[vertex.PosMtxIndex] : 0;
+                        int transform_index = draw_matrix_data.TransformIndexTable[draw_mat_index];
 
+                        // If this vertex is influenced by mulltiple bones, we build vec4s containing the indices and weights
+                        // for each bone that influences it.
                         if (draw_matrix_data.IsPartiallyWeighted[draw_mat_index])
                         {
-                            EVP1.Envelope envelope = envelope_data.Envelopes[draw_matrix_data.TransformIndexTable[draw_mat_index]];
+                            EVP1.Envelope envelope = envelope_data.Envelopes[transform_index];
                             
                             // Because we're using vec4s for the skinning data, any vertex with more than 4 bones influencing it
                             // is invalid to us. We're going to assume this never happens, but in the event that it does, this assert
@@ -550,11 +555,24 @@ namespace JStudio.J3D
                             shape.VertexData.SkinIndices.Add(indices);
                             shape.VertexData.SkinWeights.Add(weights);
                         }
+                        // If the vertex only has a single bone influencing it, we need to do some extra work. The vertex is stored in
+                        // bone space instead of bind space. We need to transform the vertex into bind space so we can work with it more easily.
                         else
                         {
-                            shape.VertexData.SkinIndices.Add(new Vector4(draw_matrix_data.TransformIndexTable[draw_mat_index], -1, -1, -1));
-                            shape.VertexData.SkinWeights.Add(new Vector4(1.0f, 0, 0, 0));
+                            Vector4 pos_as_vec4 = new Vector4(shape.VertexData.Position[vertex_index], 1.0f);
+                            shape.VertexData.Position[vertex_index] = Vector4.Transform(pos_as_vec4, envelope_data.InverseBindPose[transform_index].Inverted()).Xyz;
+
+                            Vector4 nrm_as_vec4 = new Vector4(shape.VertexData.Normal[vertex_index], 0.0f);
+                            Matrix4 nrm_mat = envelope_data.InverseBindPose[transform_index];
+                            nrm_mat.Transpose();
+
+                            shape.VertexData.Normal[vertex_index] = Vector4.Transform(nrm_as_vec4, nrm_mat).Xyz;
+
+                            shape.VertexData.SkinIndices.Add(new Vector4(transform_index, 0, 0, 0));
+                            shape.VertexData.SkinWeights.Add(new Vector4(1, 0, 0, 0));
                         }
+
+                        vertex_index++;
                     }
                 }
             }
